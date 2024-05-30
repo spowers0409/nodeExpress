@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Form</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>User Form</h1>
+  <h3>1. Inserts data into a MongoDB database</h3>
+  <form id="userForm">
+    <input type="text" id="firstName" placeholder="First Name" required>
+    <input type="text" id="lastName" placeholder="Last Name" required>
+    <input type="text" id="occupation" placeholder="Occupation" required>
+    <button type="submit">Save</button>
+  </form>
+  <br>
+  <br>
+  <h3>2. Retrieves data from the database</h3>
+  <button id="showData">Show Data</button>
+
+  <div id="dataModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>User Data</h2>
+      <h3>3. Updates data in the database</h3>
+      <div id="dataContent"></div>
+    </div>
+  </div>
+
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit User Data</h2>
+      <form id="editForm">
+        <input type="hidden" id="editUserId">
+        <input type="text" id="editFirstName" placeholder="First Name" required>
+        <input type="text" id="editLastName" placeholder="Last Name" required>
+        <input type="text" id="editOccupation" placeholder="Occupation" required>
+        <button type="submit">Save</button>
+        <button type="button" id="cancelEdit">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Delete Confirmation</h2>
+      <p>4. Deletes data from the database</p>
+      <button id="confirmDelete">OK</button>
+      <button id="cancelDelete">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('userForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      
+      const firstName = document.getElementById('firstName').value;
+      const lastName = document.getElementById('lastName').value;
+      const occupation = document.getElementById('occupation').value;
+
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ firstName, lastName, occupation })
+      });
+
+      if (response.ok) {
+        alert('User saved successfully!');
+        document.getElementById('userForm').reset();
+      } else {
+        alert('Failed to save user');
+      }
+    });
+
+    document.getElementById('showData').addEventListener('click', async function() {
+      const response = await fetch('/api/users');
+      if (response.ok) {
+        const data = await response.json();
+        const dataContent = document.getElementById('dataContent');
+        dataContent.innerHTML = data.map(user => `
+          <p>
+            ${user.firstName} ${user.lastName} - ${user.occupation}
+            <button class="editBtn" data-id="${user._id}" data-firstname="${user.firstName}" data-lastname="${user.lastName}" data-occupation="${user.occupation}">Edit</button>
+            <button class="deleteBtn" data-id="${user._id}">Delete</button>
+          </p>
+        `).join('');
+        document.getElementById('dataModal').style.display = 'block';
+
+        document.querySelectorAll('.editBtn').forEach(button => {
+          button.addEventListener('click', function() {
+            document.getElementById('editUserId').value = this.getAttribute('data-id');
+            document.getElementById('editFirstName').value = this.getAttribute('data-firstname');
+            document.getElementById('editLastName').value = this.getAttribute('data-lastname');
+            document.getElementById('editOccupation').value = this.getAttribute('data-occupation');
+            document.getElementById('editModal').style.display = 'block';
+          });
+        });
+
+        document.querySelectorAll('.deleteBtn').forEach(button => {
+          button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-id');
+            document.getElementById('confirmDelete').setAttribute('data-id', userId);
+            document.getElementById('deleteModal').style.display = 'block';
+          });
+        });
+      } else {
+        alert('Failed to retrieve data');
+      }
+    });
+
+    document.querySelectorAll('.close').forEach(span => {
+      span.addEventListener('click', function() {
+        this.closest('.modal').style.display = 'none';
+      });
+    });
+
+    window.addEventListener('click', function(event) {
+      document.querySelectorAll('.modal').forEach(modal => {
+        if (event.target == modal) {
+          modal.style.display = 'none';
+        }
+      });
+    });
+
+    document.getElementById('editForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const id = document.getElementById('editUserId').value;
+      const firstName = document.getElementById('editFirstName').value;
+      const lastName = document.getElementById('editLastName').value;
+      const occupation = document.getElementById('editOccupation').value;
+
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ firstName, lastName, occupation })
+      });
+
+      if (response.ok) {
+        alert('User updated successfully!');
+        document.getElementById('editModal').style.display = 'none';
+        document.getElementById('showData').click(); 
+      } else {
+        alert('Failed to update user');
+      }
+    });
+
+    document.getElementById('cancelEdit').addEventListener('click', function() {
+      document.getElementById('editModal').style.display = 'none';
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', async function() {
+      const userId = this.getAttribute('data-id');
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('User deleted successfully!');
+        document.getElementById('deleteModal').style.display = 'none';
+        document.getElementById('showData').click(); 
+      } else {
+        alert('Failed to delete user');
+      }
+    });
+
+    document.getElementById('cancelDelete').addEventListener('click', function() {
+      document.getElementById('deleteModal').style.display = 'none';
+    });
+  </script>
+</body>
+</html>
