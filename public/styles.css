@@ -1,5 +1,8 @@
 body {
   font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  padding-top: 50px; /* Add padding to avoid content overlap with GitHub button */
 }
 
 form {
@@ -47,4 +50,18 @@ button {
   color: black;
   text-decoration: none;
   cursor: pointer;
+}
+
+.github-button {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.github-button img {
+  width: 40px;
+  height: 40px;
 }
